@@ -1,9 +1,124 @@
 <!DOCTYPE html>
 <html lang="en">
     <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
 
+        <title>Image Recognition Examples</title>
+
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/css/bootstrap.min.css" type="text/css" />
+
+        <!--[if lt IE 9]>
+            <script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
+            <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+        <![endif]-->
     </head>
     <body>
-        
+
+        <div class="container">
+            <div class="row">
+                <div class="col-xs-3">
+                    <h2 class="text-center">Source Images</h2>
+                    <ul>
+                        <li><a class="sample-image" href="https://storage.googleapis.com/doc-image-rec/images/image1.jpg">Image 1</a></li>
+                        <li><a class="sample-image" href="https://storage.googleapis.com/doc-image-rec/images/image2.jpg">Image 2</a></li>
+                        <li><a class="sample-image" href="https://storage.googleapis.com/doc-image-rec/images/image3.jpg">Image 3</a></li>
+                        <!-- <li><a class="sample-image" href="#">Image 3</a></li>
+                        <li><a class="sample-image" href="#">Image 4</a></li> -->
+                    </ul>
+                    <p id="current-image" class="text-center center-block"></p>
+                </div>
+                <div class="col-xs-3">
+                    <h2 class="text-center">Google Cloud Vision API</h2>
+                    <p id="gcp-results"></p>
+                </div>
+                <div class="col-xs-3">
+                    <h2 class="text-center">Microsoft Azure Vision API</h2>
+                    <p id="azure-results"></p>
+                </div>
+                <div class="col-xs-3">
+                    <h2 class="text-center">Roll Your Own</h2>
+                    <p id="ryo-results"></p>
+                </div>
+            </div>
+        </div>
+
+        <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+        <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.18.0/axios.min.js"></script>
+        <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/js/bootstrap.min.js"></script>
+        <script type="text/javascript" src="config.js"></script>
+        <script type="text/javascript">
+            $("a.sample-image").click(function(e) {
+                e.preventDefault();
+
+                var imageUrl = $(this).attr('href');
+
+                var image = $("<img></img>");
+                image.attr('src', imageUrl);
+                image.attr('class', 'img-responsive center-block');
+                $("#current-image").empty().append(image);
+
+                //ajax calls
+                var gcp = $("#gcp-results");
+                var azure = $("#azure-results");
+                var ryo = $("#ryo-results");
+
+                gcp.empty();
+
+                gcp.attr('style', 'background-color:#ccc;');
+                gcp.append("<p>Loading...</p>");
+
+                axios.post('https://vision.googleapis.com/v1/images:annotate?key=' + GCP_API_KEY, {
+                    "requests": [
+                        {
+                        "image": {
+                            "source": {
+                            "imageUri": imageUrl
+                            }
+                        },
+                        "features": [
+                            {
+                            "type": "LABEL_DETECTION"
+                            }
+                        ]
+                        }
+                    ]
+                })
+                .then(function (response) {
+                    var isHotDog = false;
+                    var confidence = 0.0;
+
+                    if (response.data.responses[0].labelAnnotations != undefined) {
+                        //console.log(response.data.responses[0].labelAnnotations.length);
+                        //console.log(response.data.responses[0].labelAnnotations);
+                        var result = $("<ul></ul>");
+                        for (var i = 0; i < response.data.responses[0].labelAnnotations.length; i++)
+                        {
+                            var annotation = response.data.responses[0].labelAnnotations[i];
+                            //result.append("<li>" + annotation.description + " (" + Math.round(Number(annotation.score)*100, 2) + "%)</li>");
+                            if (annotation.description.toLowerCase() == "hot dog") {
+                                isHotDog = true;
+                                confidence = Math.round(Number(annotation.score)*100, 2);
+                            }
+                        }
+                        //gcp.append(result);
+
+                        if (isHotDog) {
+                            result = $('<h4 class="text-center">HOT DOG</h4><h6 class="text-center">(' + confidence + '%)</h6>');
+                        } else {
+                            result = $('<h4 class="text-center">NOT HOT DOG</h4>');
+                        }
+                        gcp.attr('style', 'background-color:#fff;');
+                        gcp.empty().append(result);
+                    } else {
+                        gcp.append("<p>There was an error: " + response.data.responses[0].error.message + "</p>");
+                    }
+                })
+                .catch(function (error) {
+                    console.log(error);
+                });
+            });
+        </script>
     </body>
 </html>
