@@ -26,31 +26,34 @@
     </head>
     <body>
 
+        <nav class="navbar navbar-default">
+            <div class="container">
+                <div class="navbar-header text-center">
+                    <h3>Image Recognition as a Service</h3>
+                </div>
+            </div>
+        </nav>
         <div class="container">
             <div class="row">
                 <div class="col-xs-3">
-                    <h2 class="text-center">Source Images</h2>
+                    <h2 class="text-center">Choose an Image</h2>
                     <ul>
                         <li><a class="sample-image" href="https://storage.googleapis.com/doc-image-rec/images/image1.jpg">Image 1</a></li>
                         <li><a class="sample-image" href="https://storage.googleapis.com/doc-image-rec/images/image2.jpg">Image 2</a></li>
                         <li><a class="sample-image" href="https://storage.googleapis.com/doc-image-rec/images/image3.jpg">Image 3</a></li>
-                        <!-- <li><a class="sample-image" href="#">Image 3</a></li>
-                        <li><a class="sample-image" href="#">Image 4</a></li> -->
                     </ul>
+                </div>
+                <div id="step-2" class="col-xs-6" style="display:none;">
+                    <h2 class="text-center">POST to Google API</h2>
+                    <p id="analyze-button" class="text-center" style="display:none;">
+                        <a id="analyze" class="btn btn-lg btn-primary">Analyze Image</a>
+                    </p>
                     <p id="current-image" class="text-center center-block"></p>
                 </div>
-                <div class="col-xs-6">
-                    <h2 class="text-center">Google Cloud Vision API</h2>
+                <div id="step-3" class="col-xs-3" style="display:none;">
+                    <h2 class="text-center">Enjoy the Results</h2>
                     <p id="gcp-results"></p>
                 </div>
-                <!-- <div class="col-xs-3">
-                    <h2 class="text-center">Microsoft Azure Vision API</h2>
-                    <p id="azure-results"></p>
-                </div>
-                <div class="col-xs-3">
-                    <h2 class="text-center">Roll Your Own</h2>
-                    <p id="ryo-results"></p>
-                </div> -->
             </div>
         </div>
 
@@ -68,8 +71,16 @@
                 image.attr('src', imageUrl);
                 image.attr('class', 'img-responsive center-block');
                 $("#current-image").empty().append(image);
+                $("#analyze-button").show();
+                $("#step-2").show();
+                $("#step-3").hide();
 
-                //ajax calls
+                $("#gcp-results").empty();
+            });
+
+            $("#analyze").click(function(e) {
+                $("#step-3").show();
+
                 var gcp = $("#gcp-results");
                 var azure = $("#azure-results");
                 var ryo = $("#ryo-results");
@@ -79,7 +90,9 @@
                 gcp.addClass("loading");
                 gcp.append("<p>Reticulating Splines...</p>");
 
-                axios.post('https://vision.googleapis.com/v1/images:annotate?key=' + GCP_API_KEY, {
+                var imageUrl = $("#current-image img").attr('src');
+
+                var requestData = {
                     "requests": [
                         {
                         "image": {
@@ -94,7 +107,10 @@
                         ]
                         }
                     ]
-                })
+                };
+                console.log(requestData);
+
+                axios.post('https://vision.googleapis.com/v1/images:annotate?key=' + GCP_API_KEY, requestData)
                 .then(function (response) {
                     var isHotDog = false;
                     var confidence = 0.0;
@@ -115,9 +131,9 @@
                         //gcp.append(result);
 
                         if (isHotDog) {
-                            result = $('<h4 class="text-center">HOT DOG</h4><h6 class="text-center">(' + confidence + '%)</h6>');
+                            result = $('<h1 class="text-center text-success"><span class="glyphicon glyphicon-ok"></span></h1><h2 class="text-center text-success">HOT DOG</h2><h6 class="text-center">(' + confidence + '%)</h6>');
                         } else {
-                            result = $('<h4 class="text-center">NOT HOT DOG</h4>');
+                            result = $('<h1 class="text-center text-danger"><span class="glyphicon glyphicon-remove"></span></h1><h2 class="text-center text-danger">NOT HOT DOG</h2>');
                         }
                         gcp.removeClass("loading");
                         gcp.empty().append(result);
