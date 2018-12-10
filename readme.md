@@ -1,5 +1,5 @@
 # Image Recognition as a Service
 
 ## Links
-* [Presentation](https://bit.ly/2HVMLeq)
-* [Demo](https://bit.ly/2rkRTBW)
+* [Presentation](https://goo.gl/nykAkW)
+* [Demo](https://goo.gl/pU1c9a)
